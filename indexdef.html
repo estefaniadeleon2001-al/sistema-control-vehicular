@@ -1,0 +1,1914 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Control Vehicular — ITA 2026</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,700;1,400&family=Orbitron:wght@400;700;900&family=Space+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ══════════════════════════════════════════
+           VARIABLES & RESET
+        ══════════════════════════════════════════ */
+        :root {
+            --g: #00e85a;
+            --g-dim: rgba(0,232,90,0.12);
+            --g-glow: rgba(0,232,90,0.35);
+            --b: #00c8ff;
+            --b-dim: rgba(0,200,255,0.1);
+            --amber: #f5c518;
+            --red: #ff4d5a;
+            --bg: #060709;
+            --bg1: #0c1018;
+            --bg2: #131820;
+            --bg3: #1a2030;
+            --border: rgba(255,255,255,0.07);
+            --border-hi: rgba(0,232,90,0.3);
+            --text: #dde4f0;
+            --muted: #6b7585;
+            --font-mono: 'JetBrains Mono', monospace;
+            --font-ui: 'Space Grotesk', sans-serif;
+            --font-display: 'Orbitron', sans-serif;
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-ui);
+            line-height: 1.75;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* ══════════════════════════════════════════
+           GRID OVERLAY
+        ══════════════════════════════════════════ */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(var(--g-dim) 1px, transparent 1px),
+                linear-gradient(90deg, var(--g-dim) 1px, transparent 1px);
+            background-size: 40px 40px;
+            opacity: 0.25;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ══════════════════════════════════════════
+           SCROLL PROGRESS BAR
+        ══════════════════════════════════════════ */
+        #progress-bar {
+            position: fixed;
+            top: 0; left: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--g), var(--b));
+            width: 0%;
+            z-index: 9999;
+            box-shadow: 0 0 12px var(--g-glow);
+            transition: width 0.08s linear;
+        }
+
+        /* ══════════════════════════════════════════
+           HEADER
+        ══════════════════════════════════════════ */
+        header {
+            position: relative;
+            padding: 110px 24px 90px;
+            text-align: center;
+            overflow: hidden;
+            isolation: isolate;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,232,90,0.07) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .header-line {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent 5%, var(--g) 30%, var(--b) 70%, transparent 95%);
+            opacity: 0.5;
+        }
+
+        .header-corner {
+            position: absolute;
+            width: 24px; height: 24px;
+            border-color: var(--g);
+            border-style: solid;
+            opacity: 0.6;
+        }
+        .header-corner.tl { top: 20px; left: 20px; border-width: 1px 0 0 1px; }
+        .header-corner.tr { top: 20px; right: 20px; border-width: 1px 1px 0 0; }
+        .header-corner.bl { bottom: 20px; left: 20px; border-width: 0 0 1px 1px; }
+        .header-corner.br { bottom: 20px; right: 20px; border-width: 0 1px 1px 0; }
+
+        .eyebrow {
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            letter-spacing: 5px;
+            color: var(--g);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .institution {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            letter-spacing: 3px;
+            color: var(--muted);
+            margin-bottom: 32px;
+        }
+
+        h1 {
+            font-family: var(--font-display);
+            font-size: clamp(1.5rem, 4vw, 3rem);
+            font-weight: 900;
+            line-height: 1.15;
+            color: #fff;
+            text-shadow: 0 0 60px rgba(0,232,90,0.15);
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        h1 .accent { color: var(--g); }
+
+        .header-desc {
+            max-width: 580px;
+            margin: 0 auto 40px;
+            font-size: 1rem;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .tag-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .tag {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            padding: 4px 14px;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            background: var(--bg1);
+            border-radius: 2px;
+            transition: all 0.25s;
+            cursor: default;
+        }
+        .tag:hover { border-color: var(--g); color: var(--g); background: var(--g-dim); }
+
+        /* Floating particles */
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: var(--g);
+            opacity: 0;
+            animation: particle-float linear infinite;
+            pointer-events: none;
+        }
+        @keyframes particle-float {
+            0%   { opacity: 0; transform: translateY(0) scale(0.5); }
+            15%  { opacity: 0.5; }
+            85%  { opacity: 0.3; }
+            100% { opacity: 0; transform: translateY(-90px) scale(1); }
+        }
+
+        /* ══════════════════════════════════════════
+           NAVIGATION
+        ══════════════════════════════════════════ */
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(6,7,9,0.88);
+            backdrop-filter: blur(24px) saturate(1.4);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: center;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        nav::-webkit-scrollbar { display: none; }
+
+        nav a {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            letter-spacing: 1.5px;
+            color: var(--muted);
+            text-decoration: none;
+            text-transform: uppercase;
+            padding: 16px 18px;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+            position: relative;
+        }
+        nav a:hover { color: var(--text); }
+        nav a.active {
+            color: var(--g);
+            border-bottom-color: var(--g);
+        }
+
+        /* ══════════════════════════════════════════
+           LAYOUT
+        ══════════════════════════════════════════ */
+        .wrapper {
+            max-width: 1160px;
+            margin: 0 auto;
+            padding: 72px 20px;
+        }
+
+        /* ══════════════════════════════════════════
+           SECTION CARDS
+        ══════════════════════════════════════════ */
+        .section-card {
+            background: var(--bg1);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            margin-bottom: 64px;
+            position: relative;
+            transition: border-color 0.4s;
+        }
+        .section-card:hover { border-color: var(--border-hi); }
+
+        .section-card::before {
+            content: attr(data-id);
+            position: absolute;
+            top: -10px; right: 18px;
+            background: var(--g);
+            color: #040705;
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            padding: 2px 10px;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 20px 36px;
+            border-bottom: 1px solid var(--border);
+            font-family: var(--font-display);
+            font-size: 0.9rem;
+            color: var(--g);
+            background: linear-gradient(to right, rgba(0,232,90,0.04), transparent);
+        }
+        .section-title i { opacity: 0.6; font-size: 0.85rem; }
+
+        .section-body { padding: 44px 44px; }
+
+        /* ══════════════════════════════════════════
+           TYPOGRAPHY
+        ══════════════════════════════════════════ */
+        .subtitle {
+            font-family: var(--font-display);
+            font-size: 1rem;
+            color: var(--amber);
+            margin: 44px 0 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .subtitle::before {
+            content: '';
+            display: inline-block;
+            width: 3px; height: 18px;
+            background: var(--amber);
+            border-radius: 1px;
+            flex-shrink: 0;
+        }
+        .subtitle:first-child { margin-top: 0; }
+
+        .paragraph {
+            margin-bottom: 18px;
+            font-size: 1rem;
+            color: var(--text);
+            line-height: 1.85;
+        }
+        .paragraph strong { color: #fff; font-weight: 600; }
+
+        /* ══════════════════════════════════════════
+           TEAM / DATA SECTION
+        ══════════════════════════════════════════ */
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 14px;
+            margin-bottom: 30px;
+        }
+
+        .member {
+            padding: 20px 24px;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--g);
+            transition: all 0.25s;
+        }
+        .member:hover {
+            border-color: var(--border-hi);
+            border-left-color: var(--g);
+            transform: translateX(4px);
+            background: var(--bg3);
+        }
+        .member strong { display: block; color: #fff; font-size: 0.9rem; margin-bottom: 5px; font-weight: 600; }
+        .member .ctrl { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        .info-cell {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            padding: 18px 22px;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--muted);
+            line-height: 1.9;
+        }
+        .info-cell .lbl {
+            display: block;
+            font-size: 0.6rem;
+            letter-spacing: 3px;
+            color: var(--g);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .status-ok { color: var(--g); }
+
+        /* ══════════════════════════════════════════
+           STATS BAR
+        ══════════════════════════════════════════ */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            background: var(--border);
+            gap: 1px;
+            border: 1px solid var(--border);
+            margin: 36px 0;
+        }
+        .stat {
+            background: var(--bg2);
+            padding: 22px 16px;
+            text-align: center;
+            transition: background 0.25s;
+        }
+        .stat:hover { background: var(--bg3); }
+        .stat-num {
+            font-family: var(--font-display);
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: var(--g);
+            line-height: 1;
+        }
+        .stat-lbl {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            letter-spacing: 1.5px;
+            color: var(--muted);
+            text-transform: uppercase;
+            margin-top: 6px;
+        }
+
+        /* ══════════════════════════════════════════
+           FEATURE GRID
+        ══════════════════════════════════════════ */
+        .feat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 12px;
+            margin: 28px 0;
+        }
+        .feat-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 20px;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            font-size: 0.9rem;
+            transition: all 0.25s;
+            cursor: default;
+        }
+        .feat-item:hover {
+            border-color: var(--border-hi);
+            background: var(--bg3);
+            transform: translateX(3px);
+        }
+        .feat-item i { color: var(--g); font-size: 1rem; width: 18px; flex-shrink: 0; }
+
+        /* ══════════════════════════════════════════
+           ACCORDION TIMELINE
+        ══════════════════════════════════════════ */
+        .hint-mono {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--muted);
+            margin-bottom: 20px;
+        }
+
+        .timeline { position: relative; }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 14px; top: 0; bottom: 0;
+            width: 1px;
+            background: linear-gradient(to bottom, var(--g) 0%, rgba(0,232,90,0.1) 80%, transparent 100%);
+        }
+
+        .step {
+            position: relative;
+            padding: 20px 20px 20px 52px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .step:last-child { border-bottom: none; }
+        .step:hover { background: rgba(255,255,255,0.015); }
+
+        .step-num {
+            position: absolute;
+            left: 2px; top: 18px;
+            width: 26px; height: 26px;
+            border-radius: 50%;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s;
+            flex-shrink: 0;
+        }
+        .step.open .step-num,
+        .step:hover .step-num {
+            background: var(--g);
+            border-color: var(--g);
+            color: #050905;
+            font-weight: 700;
+            box-shadow: 0 0 14px rgba(0,232,90,0.4);
+        }
+
+        .step-hd {
+            font-family: var(--font-display);
+            font-size: 0.82rem;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: color 0.2s;
+        }
+        .step.open .step-hd { color: var(--g); }
+        .step-hd i { font-size: 0.8rem; }
+
+        .step-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, opacity 0.35s;
+            opacity: 0;
+            font-size: 0.9rem;
+            color: var(--muted);
+            line-height: 1.75;
+        }
+        .step.open .step-body { max-height: 300px; opacity: 1; padding-top: 10px; }
+
+        /* ══════════════════════════════════════════
+           INTERACTIVE SIMULATOR
+        ══════════════════════════════════════════ */
+        .simulator {
+            background: #04060a;
+            border: 1px solid var(--border);
+            border-top: 2px solid var(--g);
+            padding: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+        .simulator::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(0,232,90,0.04), transparent 70%);
+            pointer-events: none;
+        }
+
+        .sim-badge {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            letter-spacing: 3px;
+            color: var(--g);
+            background: var(--g-dim);
+            border: 1px solid var(--border-hi);
+            padding: 3px 12px;
+            display: inline-block;
+            margin-bottom: 24px;
+        }
+
+        .sim-layout {
+            display: grid;
+            grid-template-columns: 200px 1fr 180px;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .sim-panel-title {
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            letter-spacing: 2px;
+            color: var(--muted);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* STATUS INDICATORS */
+        .indicators { display: flex; flex-direction: column; gap: 8px; }
+
+        .ind {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 14px;
+            background: var(--bg1);
+            border: 1px solid var(--border);
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--muted);
+            transition: all 0.3s;
+        }
+        .ind.active { border-color: var(--g); background: var(--g-dim); color: var(--g); }
+        .ind.warn   { border-color: var(--amber); background: rgba(245,197,24,0.08); color: var(--amber); }
+
+        .ind-dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: var(--muted);
+            flex-shrink: 0;
+            transition: all 0.3s;
+        }
+        .ind.active .ind-dot {
+            background: var(--g);
+            box-shadow: 0 0 8px var(--g);
+            animation: blink 1.4s ease-in-out infinite;
+        }
+        .ind.warn .ind-dot {
+            background: var(--amber);
+            box-shadow: 0 0 8px var(--amber);
+            animation: blink 0.9s ease-in-out infinite;
+        }
+        @keyframes blink {
+            0%,100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.5); }
+        }
+
+        .ind-val { margin-left: auto; font-size: 0.65rem; }
+
+        /* BARRIER VISUAL */
+        .barrier-scene {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 0;
+        }
+
+        .road-container {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            gap: 0;
+            position: relative;
+        }
+
+        .road-segment {
+            flex: 1;
+            height: 3px;
+            background: repeating-linear-gradient(90deg, var(--border) 0px, var(--border) 12px, transparent 12px, transparent 24px);
+        }
+
+        .sensor-post {
+            width: 9px;
+            height: 54px;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .sensor-eye {
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: var(--muted);
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+        .sensor-eye.lit {
+            background: var(--g);
+            border-color: var(--g);
+            box-shadow: 0 0 10px var(--g);
+        }
+
+        .barrier-unit {
+            padding: 0 14px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .barrier-post {
+            width: 10px;
+            height: 70px;
+            background: linear-gradient(to bottom, var(--bg3), var(--bg2));
+            border: 1px solid var(--border);
+            border-radius: 1px;
+            position: relative;
+        }
+
+        .barrier-arm {
+            position: absolute;
+            top: 50%; left: 10px;
+            width: 90px;
+            height: 8px;
+            background: repeating-linear-gradient(90deg, var(--red) 0px, var(--red) 16px, #e8e8e8 16px, #e8e8e8 26px);
+            border-radius: 1px;
+            transform-origin: 0% 50%;
+            transform: rotate(0deg);
+            transition: transform 0.75s cubic-bezier(0.4,0,0.2,1);
+            box-shadow: 0 0 8px rgba(255,77,90,0.3);
+        }
+        .barrier-arm.open {
+            transform: rotate(-82deg);
+            box-shadow: 0 0 12px rgba(0,232,90,0.5);
+            background: repeating-linear-gradient(90deg, var(--g) 0px, var(--g) 16px, #e8e8e8 16px, #e8e8e8 26px);
+        }
+
+        .road-labels {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .road-label {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            letter-spacing: 2px;
+            color: var(--muted);
+            text-transform: uppercase;
+        }
+
+        /* ENV PANEL */
+        .env-panel {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            padding: 16px;
+            text-align: center;
+        }
+
+        .env-icon {
+            font-size: 2.8rem;
+            transition: all 0.5s;
+            margin-bottom: 6px;
+        }
+
+        .env-label {
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            letter-spacing: 1px;
+            color: var(--amber);
+            margin-bottom: 16px;
+        }
+
+        .env-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 12px 0;
+        }
+
+        .env-gas-icon { font-size: 1.8rem; margin-bottom: 4px; }
+
+        .env-gas-lbl {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            color: var(--g);
+        }
+
+        /* SIM LOG */
+        .sim-log {
+            margin-top: 20px;
+            background: #020304;
+            border: 1px solid var(--border);
+            padding: 14px 18px;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            height: 110px;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+        .sim-log::-webkit-scrollbar { width: 3px; }
+        .sim-log::-webkit-scrollbar-track { background: transparent; }
+        .sim-log::-webkit-scrollbar-thumb { background: var(--border); }
+
+        .log-line { line-height: 1.9; }
+        .log-line.ok   { color: var(--g); }
+        .log-line.warn { color: var(--amber); }
+        .log-line.err  { color: var(--red); }
+        .log-line.muted { color: var(--muted); }
+
+        /* SIM CONTROLS */
+        .sim-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .sim-btn {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            letter-spacing: 0.5px;
+            padding: 9px 18px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.22s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sim-btn:hover:not(:disabled) {
+            border-color: var(--g);
+            color: var(--g);
+            background: var(--g-dim);
+        }
+        .sim-btn.primary {
+            border-color: var(--g);
+            color: var(--g);
+            background: var(--g-dim);
+        }
+        .sim-btn.primary:hover:not(:disabled) {
+            background: rgba(0,232,90,0.2);
+            box-shadow: 0 0 16px rgba(0,232,90,0.2);
+        }
+        .sim-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .sim-btn.ml-auto { margin-left: auto; }
+
+        /* ══════════════════════════════════════════
+           CODE WINDOWS
+        ══════════════════════════════════════════ */
+        .code-window {
+            background: #02030a;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 22px 0;
+        }
+
+        .code-header {
+            background: var(--bg2);
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dot-row { display: flex; gap: 6px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+        .dot.r { background: #ff5f57; }
+        .dot.y { background: #ffbd2e; }
+        .dot.g { background: #28ca41; }
+
+        .code-file {
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            color: var(--muted);
+            margin-left: 10px;
+        }
+
+        .code-body {
+            padding: 22px 26px;
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            line-height: 1.85;
+            white-space: pre;
+            overflow-x: auto;
+            color: #cdd5e0;
+        }
+        .code-body::-webkit-scrollbar { height: 3px; }
+        .code-body::-webkit-scrollbar-thumb { background: var(--border); }
+
+        .kw  { color: #c792ea; }
+        .fn  { color: var(--g); }
+        .str { color: #f5c518; }
+        .num { color: #f78c6c; }
+        .cm  { color: #4a5568; font-style: italic; }
+        .var { color: var(--b); }
+
+        /* ══════════════════════════════════════════
+           CASE GRID
+        ══════════════════════════════════════════ */
+        .case-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin: 22px 0;
+        }
+
+        .case-card {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            padding: 22px;
+        }
+        .case-card.f { border-top: 2px solid var(--red); }
+        .case-card.t { border-top: 2px solid var(--g); }
+
+        .case-title {
+            font-family: var(--font-display);
+            font-size: 0.78rem;
+            letter-spacing: 1px;
+            margin-bottom: 14px;
+        }
+        .case-card.f .case-title { color: var(--red); }
+        .case-card.t .case-title { color: var(--g); }
+
+        .case-row {
+            font-size: 0.85rem;
+            color: var(--muted);
+            padding: 5px 0;
+            display: flex;
+            gap: 10px;
+            line-height: 1.5;
+        }
+        .case-arrow { flex-shrink: 0; margin-top: 1px; }
+        .case-card.f .case-arrow { color: var(--red); }
+        .case-card.t .case-arrow { color: var(--g); }
+
+        /* ══════════════════════════════════════════
+           IMAGE GALLERY + LIGHTBOX
+        ══════════════════════════════════════════ */
+        .img-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        .img-wrap { display: flex; flex-direction: column; }
+
+        .img-lbl {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            letter-spacing: 1.5px;
+            color: var(--muted);
+            text-transform: uppercase;
+            margin-bottom: 9px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .img-lbl::before {
+            content: '';
+            width: 10px; height: 1px;
+            background: var(--g);
+            flex-shrink: 0;
+        }
+
+        .img-box {
+            position: relative;
+            aspect-ratio: 16/10;
+            background: #020408;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            cursor: pointer;
+            transition: border-color 0.25s;
+        }
+        .img-box:hover { border-color: var(--border-hi); }
+
+        .img-box img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            display: block;
+            filter: brightness(0.88) saturate(0.85);
+            transition: all 0.5s cubic-bezier(0.4,0,0.2,1);
+        }
+        .img-box:hover img {
+            filter: brightness(1) saturate(1.1);
+            transform: scale(1.05);
+        }
+
+        .img-hover-ov {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,232,90,0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.25s;
+        }
+        .img-hover-ov i {
+            color: #fff;
+            font-size: 1.4rem;
+            opacity: 0;
+            transform: scale(0.7);
+            transition: all 0.25s;
+        }
+        .img-box:hover .img-hover-ov { background: rgba(0,232,90,0.08); }
+        .img-box:hover .img-hover-ov i { opacity: 1; transform: scale(1); }
+
+        .img-missing {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: var(--muted);
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            pointer-events: none;
+        }
+        .img-missing i { font-size: 1.8rem; opacity: 0.25; }
+
+        /* LIGHTBOX */
+        .lightbox {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(4,5,8,0.96);
+            z-index: 9000;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            cursor: zoom-out;
+            animation: lb-in 0.2s ease;
+        }
+        @keyframes lb-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .lightbox.show { display: flex; }
+
+        .lb-img {
+            max-width: 90vw;
+            max-height: 86vh;
+            object-fit: contain;
+            border: 1px solid var(--border);
+            box-shadow: 0 0 80px rgba(0,0,0,0.8);
+            cursor: default;
+        }
+
+        .lb-close {
+            position: fixed;
+            top: 18px; right: 22px;
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: color 0.2s;
+            z-index: 9001;
+        }
+        .lb-close:hover { color: var(--g); }
+
+        /* ══════════════════════════════════════════
+           CONCLUSIONS
+        ══════════════════════════════════════════ */
+        .conclusions-wrap {
+            max-width: 1160px;
+            margin: 0 auto;
+            padding: 0 20px 72px;
+        }
+
+        .section-head-standalone {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: var(--font-display);
+            font-size: 0.9rem;
+            color: var(--g);
+            padding: 18px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        .section-head-standalone i { opacity: 0.6; }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 18px;
+        }
+
+        .conc-card {
+            background: var(--bg1);
+            border: 1px solid var(--border);
+            padding: 28px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        .conc-card::before {
+            content: '"';
+            position: absolute;
+            top: 4px; left: 18px;
+            font-size: 6rem;
+            color: var(--g);
+            opacity: 0.05;
+            font-family: Georgia, serif;
+            line-height: 1;
+            pointer-events: none;
+        }
+        .conc-card:hover {
+            border-color: var(--border-hi);
+            transform: translateY(-3px);
+            box-shadow: 0 14px 32px rgba(0,0,0,0.35);
+        }
+
+        .conc-name {
+            font-family: var(--font-display);
+            font-size: 0.72rem;
+            color: var(--g);
+            margin-bottom: 14px;
+            line-height: 1.4;
+            letter-spacing: 0.5px;
+        }
+
+        .conc-text {
+            font-size: 0.88rem;
+            color: var(--muted);
+            line-height: 1.8;
+        }
+
+        /* ══════════════════════════════════════════
+           BIBLIOGRAPHY
+        ══════════════════════════════════════════ */
+        .bib-wrap {
+            max-width: 1160px;
+            margin: 0 auto;
+            padding: 0 20px 80px;
+        }
+
+        .bib-item {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--border);
+            padding: 14px 22px;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-bottom: 10px;
+            transition: all 0.22s;
+        }
+        .bib-item:hover { border-left-color: var(--g); color: var(--text); }
+        .bib-item em { color: var(--text); font-style: italic; }
+
+        /* ══════════════════════════════════════════
+           FOOTER
+        ══════════════════════════════════════════ */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 56px 20px;
+            text-align: center;
+        }
+        footer .f-logo {
+            font-family: var(--font-display);
+            font-size: 0.78rem;
+            color: var(--muted);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+        footer .f-sub {
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            color: #2c3340;
+            letter-spacing: 1px;
+        }
+
+        /* ══════════════════════════════════════════
+           BACK TO TOP
+        ══════════════════════════════════════════ */
+        #topBtn {
+            position: fixed;
+            bottom: 28px; right: 28px;
+            width: 42px; height: 42px;
+            background: var(--bg2);
+            border: 1px solid var(--border-hi);
+            color: var(--g);
+            font-size: 0.9rem;
+            cursor: pointer;
+            z-index: 990;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s;
+        }
+        #topBtn:hover {
+            background: var(--g);
+            color: #050905;
+            box-shadow: 0 0 20px rgba(0,232,90,0.35);
+        }
+
+        /* ══════════════════════════════════════════
+           SCROLL REVEAL
+        ══════════════════════════════════════════ */
+        .reveal {
+            opacity: 0;
+            transform: translateY(28px);
+            transition: opacity 0.65s ease, transform 0.65s ease;
+        }
+        .reveal.in { opacity: 1; transform: none; }
+
+        /* ══════════════════════════════════════════
+           RESPONSIVE
+        ══════════════════════════════════════════ */
+        @media (max-width: 900px) {
+            .sim-layout { grid-template-columns: 1fr; }
+            .case-grid { grid-template-columns: 1fr; }
+            .img-grid { grid-template-columns: 1fr; }
+            .stats-row { grid-template-columns: 1fr 1fr; }
+            .info-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 680px) {
+            .section-body { padding: 28px 20px; }
+            .section-title { padding: 16px 20px; }
+            header { padding: 80px 20px 70px; }
+        }
+        @media (max-width: 480px) {
+            .stats-row { grid-template-columns: 1fr 1fr; }
+            h1 { font-size: 1.4rem; }
+            .sim-btn span { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Progress bar -->
+<div id="progress-bar"></div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lb" onclick="lbClose(event)">
+    <button class="lb-close" onclick="lbClose()"><i class="fas fa-times"></i></button>
+    <img class="lb-img" id="lb-img" src="" alt="">
+</div>
+
+<!-- ══════════════════ HEADER ══════════════════ -->
+<header>
+    <div class="header-corner tl"></div>
+    <div class="header-corner tr"></div>
+    <div class="header-corner bl"></div>
+    <div class="header-corner br"></div>
+    <div class="header-line"></div>
+
+    <div class="eyebrow">Tecnológico Nacional de México</div>
+    <p class="institution">Instituto Tecnológico de Aguascalientes</p>
+
+    <h1>
+        Proyecto Final:<br>
+        Sistema <span class="accent">Inteligente</span> de<br>
+        Control Vehicular
+    </h1>
+
+    <p class="header-desc">
+        Sistema automatizado de acceso vehicular con monitoreo ambiental en tiempo real,
+        integrado mediante Arduino y LabVIEW.
+    </p>
+
+    <div class="tag-row">
+        <span class="tag">Arduino</span>
+        <span class="tag">LabVIEW</span>
+        <span class="tag">Comunicación Serial</span>
+        <span class="tag">Sensores IoT</span>
+        <span class="tag">Industria Inteligente</span>
+        <span class="tag">Servomotor</span>
+    </div>
+</header>
+
+<!-- ══════════════════ NAV ══════════════════ -->
+<nav id="main-nav">
+    <a href="#datos">Datos</a>
+    <a href="#intro">Introducción</a>
+    <a href="#desarrollo">Desarrollo</a>
+    <a href="#sim">Simulación</a>
+    <a href="#labview">LabVIEW</a>
+    <a href="#evidencias">Evidencias</a>
+    <a href="#conclusiones">Conclusiones</a>
+</nav>
+
+<!-- ══════════════════ MAIN CONTENT ══════════════════ -->
+<div class="wrapper">
+
+    <!-- DATOS DEL PROYECTO -->
+    <section id="datos" class="section-card reveal" data-id="01 / DATOS">
+        <div class="section-title"><i class="fas fa-id-card"></i> Datos del Proyecto</div>
+        <div class="section-body">
+            <div class="team-grid">
+                <div class="member">
+                    <strong>Estefanía de Guadalupe de León Ramírez</strong>
+                    <span class="ctrl">No. Control: 22150049</span>
+                </div>
+                <div class="member">
+                    <strong>Guadalupe Nataly Ramos Silva</strong>
+                    <span class="ctrl">No. Control: 21150891</span>
+                </div>
+                <div class="member">
+                    <strong>Nefi Alberto Venegas Ramos</strong>
+                    <span class="ctrl">No. Control: 21150881</span>
+                </div>
+            </div>
+            <div class="info-grid">
+                <div class="info-cell">
+                    <span class="lbl">Docente</span>
+                    Profra. Fátima Maricela Garcia Khols<br>
+                    Depto. de Ingeniería Eléctrica y Electrónica
+                </div>
+                <div class="info-cell">
+                    <span class="lbl">Entrega</span>
+                    02 de Junio de 2026<br>
+                    <span class="status-ok">&#10003; Finalizado y Documentado</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- INTRODUCCIÓN -->
+    <section id="intro" class="section-card reveal" data-id="02 / INTRO">
+        <div class="section-title"><i class="fas fa-file-alt"></i> Introducción</div>
+        <div class="section-body">
+            <p class="paragraph">El presente proyecto desarrolla un sistema inteligente de control y monitoreo para un acceso vehicular automatizado, utilizando una plataforma <strong>Arduino</strong> para la adquisición de datos y el control de dispositivos, junto con una interfaz gráfica desarrollada en <strong>LabVIEW</strong> para la supervisión en tiempo real.</p>
+            <p class="paragraph">Este trabajo fue realizado dentro de la materia de Industria Inteligente, integrando conceptos relacionados con automatización, comunicación serial, monitoreo de procesos y digitalización de sistemas. El sistema emplea dos sensores ópticos para detectar la entrada y salida de vehículos, accionando una pluma automatizada mediante un servomotor.</p>
+
+            <div class="stats-row">
+                <div class="stat">
+                    <div class="stat-num counter" data-target="2">0</div>
+                    <div class="stat-lbl">Sensores Ópticos</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-num counter" data-target="3">0</div>
+                    <div class="stat-lbl">Tipos de Sensores</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-num counter" data-target="8">0</div>
+                    <div class="stat-lbl">Etapas del Proceso</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-num counter" data-target="1">0</div>
+                    <div class="stat-lbl">Actuador</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- DESARROLLO -->
+    <section id="desarrollo" class="section-card reveal" data-id="03 / DESARROLLO">
+        <div class="section-title"><i class="fas fa-cogs"></i> Desarrollo: Ingeniería de Procesos</div>
+        <div class="section-body">
+
+            <h2 class="subtitle">Descripción General</h2>
+            <p class="paragraph">El sistema está diseñado para supervisar en tiempo real el estado de diversos sensores y controlar una pluma automatizada que regula el acceso de vehículos a una zona determinada. La comunicación entre Arduino y LabVIEW se realiza mediante el puerto serial, permitiendo la adquisición, procesamiento y visualización de datos de forma continua.</p>
+            <p class="paragraph">Además del control vehicular, el sistema incorpora un sensor de luz y un sensor de gas para ampliar las capacidades de monitoreo ambiental, generando alertas y accionando actuadores según las condiciones detectadas.</p>
+
+            <div class="feat-grid">
+                <div class="feat-item"><i class="fas fa-database"></i> Adquisición de datos mediante sensores</div>
+                <div class="feat-item"><i class="fas fa-exchange-alt"></i> Comunicación serial entre dispositivos</div>
+                <div class="feat-item"><i class="fas fa-eye"></i> Monitoreo de procesos en tiempo real</div>
+                <div class="feat-item"><i class="fas fa-robot"></i> Control automatizado de actuadores</div>
+                <div class="feat-item"><i class="fas fa-desktop"></i> Supervisión mediante interfaces gráficas</div>
+                <div class="feat-item"><i class="fas fa-network-wired"></i> Integración de sistemas físicos y digitales</div>
+            </div>
+
+            <h2 class="subtitle">Funcionamiento — 8 Etapas del Proceso</h2>
+            <p class="hint-mono">// Haz clic en cada etapa para expandir los detalles</p>
+
+            <div class="timeline">
+                <div class="step" onclick="toggleStep(this)">
+                    <div class="step-num">01</div>
+                    <div class="step-hd"><i class="fas fa-car" style="color:var(--g)"></i> Detección de llegada del vehículo</div>
+                    <div class="step-body">El proceso inicia cuando un vehículo es detectado por el sensor óptico ubicado en la entrada. Al activarse este sensor, Arduino recibe la señal y la envía a LabVIEW mediante comunicación serial. En la interfaz gráfica se actualiza el estado del sensor, indicando que un vehículo ha llegado.</div>
+                </div>
+                <div class="step" onclick="toggleStep(this)">
+                    <div class="step-num">02</div>
+                    <div class="step-hd"><i class="fas fa-door-open" style="color:var(--amber)"></i> Apertura de la pluma</div>
+                    <div class="step-body">Una vez detectada la presencia del vehículo, el sistema activa la salida correspondiente para accionar el servomotor que controla la pluma. La barrera se eleva permitiendo el acceso. Simultáneamente, la interfaz de LabVIEW muestra que la pluma se encuentra abierta.</div>
+                </div>
+                <div class="step" onclick="toggleStep(this)">
+                    <div class="step-num">03</div>
+                    <div class="step-hd"><i class="fas fa-road" style="color:var(--g)"></i> Paso del vehículo</div>
+                    <div class="step-body">Con la pluma levantada, el vehículo puede avanzar a través de la zona de acceso. Durante este proceso, el sistema continúa monitoreando los sensores ópticos para verificar el desplazamiento correcto del automóvil.</div>
+                </div>
+                <div class="step" onclick="toggleStep(this)">
+                    <div class="step-num">04</div>
+                    <div class="step-hd"><i class="fas fa-sensor" style="color:var(--b)"></i> Detección de salida del vehículo</div>
+                    <div class="step-body">Cuando el vehículo atraviesa completamente el acceso, activa el segundo sensor óptico ubicado en la salida. Esta señal confirma que el automóvil ha cruzado la barrera de manera segura.</div>
+                </div>
+                <div class="step" onclick="toggleStep(this)">
+                    <div class="step-num">05</div>
+                    <div class="step-hd"><i class="fas fa-times-circle" style="color:var(--red)"></i> Cierre de la pluma</div>
+                    <div class="step-body">Después de confirmar el paso del vehículo, Arduino desactiva la señal de apertura y ordena el retorno del servomotor a su posición inicial. La pluma desciende nuevamente hasta quedar cerrada y lista para el siguiente vehículo.</div>
+                </div>
+                <div class="step" onclick="toggleStep(this)">
+                    <div class="step-num">06</div>
+                    <div class="step-hd"><i class="fas fa-wind" style="color:var(--amber)"></i> Monitoreo ambiental</div>
+                    <div class="step-body">De manera simultánea, el sistema supervisa las condiciones ambientales: el sensor de luz identifica condiciones diurnas o nocturnas y activa las luces según sea necesario; el sensor de gas monitorea la concentración de gases y activa el ventilador si los niveles superan los parámetros normales.</div>
+                </div>
+                <div class="step" onclick="toggleStep(this)">
+                    <div class="step-num">07</div>
+                    <div class="step-hd"><i class="fas fa-desktop" style="color:var(--b)"></i> Supervisión mediante LabVIEW</div>
+                    <div class="step-body">La interfaz gráfica en LabVIEW visualiza en tiempo real: estado del sensor de entrada y salida, condición de la pluma, sensor de luz, sensor de gas y estado de la comunicación con Arduino.</div>
+                </div>
+                <div class="step" onclick="toggleStep(this)">
+                    <div class="step-num">08</div>
+                    <div class="step-hd"><i class="fas fa-sync" style="color:var(--g)"></i> Ciclo completo</div>
+                    <div class="step-body">El sistema repite continuamente este ciclo de detección, acceso, monitoreo y cierre para cada vehículo que se aproxima. Gracias a la integración entre Arduino, los sensores y LabVIEW, se logra una operación automática, segura y eficiente.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SIMULACIÓN INTERACTIVA -->
+    <section id="sim" class="section-card reveal" data-id="04 / SIMULACIÓN">
+        <div class="section-title"><i class="fas fa-play-circle"></i> Simulación Interactiva del Sistema</div>
+        <div class="section-body">
+            <p class="paragraph">Interactúa con el panel a continuación para explorar el comportamiento del sistema de control vehicular en tiempo real.</p>
+
+            <div class="simulator">
+                <div class="sim-badge">PANEL DE CONTROL — MODO SIMULACIÓN</div>
+
+                <div class="sim-layout">
+                    <!-- Left: Status indicators -->
+                    <div>
+                        <div class="sim-panel-title">Estado del Sistema</div>
+                        <div class="indicators">
+                            <div class="ind" id="ind-entrada">
+                                <div class="ind-dot"></div>
+                                <span>Sensor Entrada</span>
+                                <span class="ind-val" id="val-entrada">OFF</span>
+                            </div>
+                            <div class="ind" id="ind-pluma">
+                                <div class="ind-dot"></div>
+                                <span>Pluma</span>
+                                <span class="ind-val" id="val-pluma">CERRADA</span>
+                            </div>
+                            <div class="ind" id="ind-salida">
+                                <div class="ind-dot"></div>
+                                <span>Sensor Salida</span>
+                                <span class="ind-val" id="val-salida">OFF</span>
+                            </div>
+                            <div class="ind" id="ind-gas">
+                                <div class="ind-dot"></div>
+                                <span>Sensor Gas</span>
+                                <span class="ind-val" id="val-gas" style="color:var(--g)">NORMAL</span>
+                            </div>
+                            <div class="ind" id="ind-luz">
+                                <div class="ind-dot"></div>
+                                <span>Sensor Luz</span>
+                                <span class="ind-val" id="val-luz">DÍA</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Center: Barrier visualization -->
+                    <div class="barrier-scene">
+                        <div class="sim-panel-title" style="width:100%; text-align:center;">Vista de Acceso Vehicular</div>
+                        <div class="road-container">
+                            <!-- Entry zone -->
+                            <div class="road-segment"></div>
+                            <!-- Entry sensor -->
+                            <div class="sensor-post">
+                                <div class="sensor-eye" id="eye-a"></div>
+                            </div>
+                            <!-- Road to barrier -->
+                            <div class="road-segment" style="flex:0.4;"></div>
+                            <!-- Barrier -->
+                            <div class="barrier-unit">
+                                <div class="barrier-post">
+                                    <div class="barrier-arm" id="barrier-arm"></div>
+                                </div>
+                            </div>
+                            <!-- Road from barrier -->
+                            <div class="road-segment" style="flex:0.4;"></div>
+                            <!-- Exit sensor -->
+                            <div class="sensor-post">
+                                <div class="sensor-eye" id="eye-b"></div>
+                            </div>
+                            <!-- Exit zone -->
+                            <div class="road-segment"></div>
+                        </div>
+                        <div class="road-labels">
+                            <span class="road-label">Entrada</span>
+                            <span class="road-label" style="text-align:center;">Pluma</span>
+                            <span class="road-label">Salida</span>
+                        </div>
+                    </div>
+
+                    <!-- Right: Environment -->
+                    <div>
+                        <div class="sim-panel-title">Ambiente</div>
+                        <div class="env-panel">
+                            <div class="env-icon" id="env-icon">&#9728;&#65039;</div>
+                            <div class="env-label" id="env-label">ES DE DÍA</div>
+                            <div class="env-divider"></div>
+                            <div class="env-gas-icon" id="gas-icon">&#127807;</div>
+                            <div class="env-gas-lbl" id="gas-lbl">AIRE LIMPIO</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Log -->
+                <div class="sim-log" id="sim-log">
+                    <div class="log-line muted">&gt; Sistema iniciado. Esperando vehículo...</div>
+                </div>
+
+                <!-- Controls -->
+                <div class="sim-controls">
+                    <button class="sim-btn primary" id="btn-car" onclick="simVehiculo()">
+                        <i class="fas fa-car"></i> <span>Detectar Vehículo</span>
+                    </button>
+                    <button class="sim-btn" id="btn-gas" onclick="simGas()">
+                        <i class="fas fa-smog"></i> <span>Simular Gas</span>
+                    </button>
+                    <button class="sim-btn" id="btn-luz" onclick="simLuz()">
+                        <i class="fas fa-moon"></i> <span>Alternar Luz</span>
+                    </button>
+                    <button class="sim-btn ml-auto" onclick="simReset()">
+                        <i class="fas fa-undo"></i> <span>Reiniciar</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- LABVIEW -->
+    <section id="labview" class="section-card reveal" data-id="05 / LABVIEW">
+        <div class="section-title"><i class="fas fa-code"></i> Descripción Detallada: Programa en LabVIEW</div>
+        <div class="section-body">
+
+            <h2 class="subtitle">1. Inicialización de la Comunicación</h2>
+            <p class="paragraph">Al iniciar la ejecución del programa, LabVIEW establece comunicación con la tarjeta Arduino mediante el toolkit <strong>LINX</strong> y un puerto serial previamente configurado. Esta etapa crea el enlace entre hardware y software para intercambiar información en tiempo real. Una vez exitosa la conexión, el sistema queda listo para comenzar la adquisición de datos y el control de los dispositivos conectados.</p>
+
+            <h2 class="subtitle">2. Estructura Principal — While Loop</h2>
+            <p class="paragraph">Todo el funcionamiento del sistema se encuentra contenido dentro de un ciclo <strong>While Loop</strong>, el cual se ejecuta continuamente mientras el usuario no presione el botón Stop. Esta estructura permite que la lectura de sensores, el procesamiento de datos y la actualización de indicadores se realicen de manera permanente durante la operación.</p>
+
+            <h2 class="subtitle">3. Lectura de Sensores Ópticos</h2>
+            <div class="code-window">
+                <div class="code-header">
+                    <div class="dot-row">
+                        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+                    </div>
+                    <span class="code-file">Lógica_Detección.vi</span>
+                </div>
+                <div class="code-body"><span class="cm">// SENSOR ÓPTICO DE ENTRADA — Pin Digital 2</span>
+<span class="var">pinEntrada</span>   = <span class="num">2</span>
+<span class="var">señalEntrada</span> = <span class="fn">LINX_DigitalRead</span>(<span class="var">pinEntrada</span>)
+<span class="var">led_entrada</span>.<span class="fn">update</span>(<span class="var">señalEntrada</span>)
+
+<span class="kw">IF</span> <span class="var">señalEntrada</span> == <span class="kw">TRUE</span>:
+    <span class="var">strEstado</span> = <span class="str">"Entró carro"</span>
+
+<span class="cm">// SENSOR ÓPTICO DE SALIDA — Pin Digital 3</span>
+<span class="var">pinSalida</span>   = <span class="num">3</span>
+<span class="var">señalSalida</span> = <span class="fn">LINX_DigitalRead</span>(<span class="var">pinSalida</span>)
+<span class="var">led_salida</span>.<span class="fn">update</span>(<span class="var">señalSalida</span>)
+
+<span class="kw">IF</span> <span class="var">señalSalida</span> == <span class="kw">TRUE</span>:
+    <span class="var">strEstado</span> = <span class="str">"Salió carro"</span></div>
+            </div>
+
+            <h2 class="subtitle">4. Estructura Case — Control de la Pluma</h2>
+            <p class="paragraph">El control de la pluma se realiza mediante una estructura Case con dos posibles estados de funcionamiento:</p>
+            <div class="case-grid">
+                <div class="case-card f">
+                    <div class="case-title">CASO: FALSE</div>
+                    <div class="case-row"><span class="case-arrow">&#8250;</span> Salida digital del servomotor desactivada</div>
+                    <div class="case-row"><span class="case-arrow">&#8250;</span> Pluma en posición cerrada</div>
+                    <div class="case-row"><span class="case-arrow">&#8250;</span> No se permite el paso de vehículos</div>
+                    <div class="case-row"><span class="case-arrow">&#8250;</span> Interfaz indica: <em>"Sistema en espera"</em></div>
+                </div>
+                <div class="case-card t">
+                    <div class="case-title">CASO: TRUE</div>
+                    <div class="case-row"><span class="case-arrow">&#8250;</span> Salida digital del servomotor activada</div>
+                    <div class="case-row"><span class="case-arrow">&#8250;</span> Pluma se eleva — acceso permitido</div>
+                    <div class="case-row"><span class="case-arrow">&#8250;</span> Interfaz actualiza estado de la pluma</div>
+                    <div class="case-row"><span class="case-arrow">&#8250;</span> Mensaje: <em>"¡Córrele que se cierra!"</em></div>
+                </div>
+            </div>
+
+            <h2 class="subtitle">5. Temporización y Control Analógico</h2>
+            <div class="code-window">
+                <div class="code-header">
+                    <div class="dot-row">
+                        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+                    </div>
+                    <span class="code-file">Control_Ambiental.vi</span>
+                </div>
+                <div class="code-body"><span class="cm">// TEMPORIZACIÓN — Mantener pluma abierta</span>
+<span class="fn">Wait_ms</span>(<span class="num">3000</span>)  <span class="cm">// Tiempo suficiente para paso del vehículo</span>
+
+<span class="cm">// SENSOR DE GAS — Entrada Analógica</span>
+<span class="var">lecturaGas</span> = <span class="fn">LINX_AnalogRead</span>(<span class="var">pinGas</span>)
+
+<span class="kw">IF</span> <span class="var">lecturaGas</span> &lt;= <span class="var">umbralSeguro</span>:
+    <span class="var">alertaGas</span> = <span class="str">"Todo chill"</span>
+<span class="kw">ELSE</span>:
+    <span class="var">alertaGas</span> = <span class="str">"Cuidado, hay gas"</span>
+    <span class="fn">LINX_DigitalWrite</span>(<span class="var">pinVentilador</span>, <span class="kw">TRUE</span>)
+
+<span class="cm">// SENSOR DE LUZ — Entrada Analógica</span>
+<span class="var">lecturaLuz</span> = <span class="fn">LINX_AnalogRead</span>(<span class="var">pinLuz</span>)
+
+<span class="kw">IF</span> <span class="var">lecturaLuz</span> &gt;= <span class="var">umbralDia</span>:
+    <span class="var">estadoLuz</span> = <span class="str">"Es de Día"</span>
+<span class="kw">ELSE</span>:
+    <span class="var">estadoLuz</span> = <span class="str">"Es de Noche"</span>
+    <span class="fn">LINX_DigitalWrite</span>(<span class="var">pinLuces</span>, <span class="kw">TRUE</span>)</div>
+            </div>
+
+            <h2 class="subtitle">6. Finalización del Programa</h2>
+            <p class="paragraph">Cuando el usuario presiona el botón Stop: se detiene la ejecución del While Loop, finaliza la adquisición de datos, se cierran las conexiones establecidas con Arduino y se liberan los recursos del programa. Este procedimiento garantiza un cierre seguro y evita errores de comunicación en futuras ejecuciones.</p>
+        </div>
+    </section>
+
+    <!-- EVIDENCIAS -->
+    <section id="evidencias" class="section-card reveal" data-id="06 / EVIDENCIAS">
+        <div class="section-title"><i class="fas fa-images"></i> Evidencias Técnicas</div>
+        <div class="section-body">
+            <p class="hint-mono">// Clic en cualquier imagen para ver en pantalla completa</p>
+            <div class="img-grid">
+                <div class="img-wrap">
+                    <div class="img-lbl">Panel Frontal (HMI)</div>
+                    <div class="img-box" onclick="lbOpen('panel_frontal.png')">
+                        <img src="panel_frontal.png" alt="Panel Frontal LabVIEW"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                        <div class="img-hover-ov"><i class="fas fa-expand-alt"></i></div>
+                        <div class="img-missing" style="display:none">
+                            <i class="fas fa-image"></i>
+                            <span>panel_frontal.png</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="img-wrap">
+                    <div class="img-lbl">Diagrama de Bloques — Caso TRUE</div>
+                    <div class="img-box" onclick="lbOpen('diagrama_true.png')">
+                        <img src="diagrama_true.png" alt="Diagrama Caso TRUE"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                        <div class="img-hover-ov"><i class="fas fa-expand-alt"></i></div>
+                        <div class="img-missing" style="display:none">
+                            <i class="fas fa-image"></i>
+                            <span>diagrama_true.png</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="img-wrap">
+                    <div class="img-lbl">Diagrama de Bloques — Caso FALSE</div>
+                    <div class="img-box" onclick="lbOpen('diagrama_false.png')">
+                        <img src="diagrama_false.png" alt="Diagrama Caso FALSE"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                        <div class="img-hover-ov"><i class="fas fa-expand-alt"></i></div>
+                        <div class="img-missing" style="display:none">
+                            <i class="fas fa-image"></i>
+                            <span>diagrama_false.png</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="img-wrap">
+    <div class="img-lbl">Montaje Físico del Proyecto</div>
+    <div class="img-box">
+        <img src="foto_proyecto.png" alt="Montaje Físico" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+    </div>
+</div>                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div><!-- /wrapper -->
+
+<!-- CONCLUSIONES -->
+<section id="conclusiones">
+    <div class="conclusions-wrap">
+        <div class="section-head-standalone">
+            <i class="fas fa-comment-dots"></i>
+            Conclusiones
+        </div>
+        <div class="cards-grid">
+            <div class="conc-card reveal">
+                <div class="conc-name">Estefanía de Guadalupe de León Ramírez</div>
+                <p class="conc-text">"El desarrollo de este proyecto permitió aplicar de manera práctica la integración de tecnologías de adquisición de datos, monitoreo y control. La combinación de Arduino y LabVIEW facilitó la visualización en tiempo real de las variables del proceso, lo que es fundamental en entornos de Industria Inteligente. La incorporación de sensores ambientales demostró cómo se pueden añadir capas de valor y seguridad a un sistema tradicional de control de acceso."</p>
+            </div>
+            <div class="conc-card reveal">
+                <div class="conc-name">Guadalupe Nataly Ramos Silva</div>
+                <p class="conc-text">"Durante la realización de esta práctica, se comprendió la importancia del monitoreo en tiempo real para optimizar procesos automatizados. El diseño de la interfaz en LabVIEW permitió crear un entorno intuitivo para el usuario, mientras que la comunicación serial con Arduino mostró ser una herramienta robusta para la digitalización de sistemas físicos. Este proyecto evidencia cómo las herramientas de la Industria Inteligente pueden emplearse para desarrollar sistemas más seguros y adaptables."</p>
+            </div>
+            <div class="conc-card reveal">
+                <div class="conc-name">Nefi Alberto Venegas Ramos</div>
+                <p class="conc-text">"Se logró identificar la relevancia de la interacción entre sensores, actuadores y plataformas de supervisión. La implementación de la pluma automatizada permitió reproducir un sistema funcional de acceso vehicular, mientras que LabVIEW proporcionó un entorno adecuado para la visualización. La incorporación de sensores ambientales permitió extender las capacidades del proyecto hacia un enfoque de industria moderna."</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- BIBLIOGRAFÍA -->
+<div class="bib-wrap">
+    <div class="section-head-standalone">
+        <i class="fas fa-book"></i>
+        Bibliografía
+    </div>
+    <div class="bib-item">[1] DeIngenierías. <em>LabVIEW: Un entorno de programación gráfica para la ingeniería y la ciencia.</em></div>
+    <div class="bib-item">[2] National Instruments. <em>LINX Toolkit Documentation — LabVIEW MakerHub.</em> ni.com</div>
+    <div class="bib-item">[3] Arduino. <em>Arduino Reference Manual.</em> arduino.cc</div>
+</div>
+
+<footer>
+    <div class="f-logo">Instituto Tecnológico de Aguascalientes</div>
+    <p class="f-sub">Industria Inteligente &bull; Proyecto Final 2026 &bull; Aguascalientes, Ags.</p>
+</footer>
+
+<button id="topBtn" title="Volver arriba"><i class="fas fa-arrow-up"></i></button>
+
+<!-- ══════════════════ SCRIPTS ══════════════════ -->
+<script>
+/* ── PARTICLES ── */
+(function(){
+    const hdr = document.querySelector('header');
+    for(let i=0;i<22;i++){
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.cssText = `
+            left:${Math.random()*100}%;
+            bottom:${Math.random()*30}px;
+            width:${1+Math.random()*2}px;
+            height:${1+Math.random()*2}px;
+            animation-duration:${7+Math.random()*11}s;
+            animation-delay:${Math.random()*10}s;
+        `;
+        hdr.appendChild(p);
+    }
+})();
+
+/* ── PROGRESS BAR ── */
+const pbar = document.getElementById('progress-bar');
+window.addEventListener('scroll', ()=>{
+    const st = document.documentElement.scrollTop;
+    const sh = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    pbar.style.width = (st/sh*100)+'%';
+}, {passive:true});
+
+/* ── ACTIVE NAV ── */
+const navLinks = document.querySelectorAll('nav a');
+const sections = ['datos','intro','desarrollo','sim','labview','evidencias','conclusiones'];
+window.addEventListener('scroll', ()=>{
+    let cur = '';
+    sections.forEach(id=>{
+        const el = document.getElementById(id);
+        if(el && el.getBoundingClientRect().top < 100) cur = id;
+    });
+    navLinks.forEach(a=>{
+        a.classList.toggle('active', a.getAttribute('href') === '#'+cur);
+    });
+}, {passive:true});
+
+/* ── SCROLL REVEAL ── */
+const rObs = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+        if(e.isIntersecting){ e.target.classList.add('in'); rObs.unobserve(e.target); }
+    });
+},{threshold:0.07});
+document.querySelectorAll('.reveal').forEach(el=>rObs.observe(el));
+
+/* ── ANIMATED COUNTERS ── */
+function runCounter(el){
+    const target = parseInt(el.dataset.target);
+    let n = 0, step = target/28;
+    const iv = setInterval(()=>{
+        n += step;
+        if(n >= target){ el.textContent = target; clearInterval(iv); }
+        else { el.textContent = Math.floor(n); }
+    },38);
+}
+const cObs = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ runCounter(e.target); cObs.unobserve(e.target); }});
+},{threshold:0.5});
+document.querySelectorAll('.counter').forEach(el=>cObs.observe(el));
+
+/* ── BACK TO TOP ── */
+const topBtn = document.getElementById('topBtn');
+window.addEventListener('scroll', ()=>{
+    topBtn.style.display = window.scrollY > 380 ? 'flex' : 'none';
+},{passive:true});
+topBtn.onclick = ()=>window.scrollTo({top:0,behavior:'smooth'});
+
+/* ── ACCORDION TIMELINE ── */
+function toggleStep(el){
+    const isOpen = el.classList.contains('open');
+    document.querySelectorAll('.step').forEach(s=>s.classList.remove('open'));
+    if(!isOpen) el.classList.add('open');
+}
+
+/* ── LIGHTBOX ── */
+function lbOpen(src){
+    const lb = document.getElementById('lb');
+    document.getElementById('lb-img').src = src;
+    lb.classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+function lbClose(e){
+    if(e && e.target === document.getElementById('lb-img')) return;
+    document.getElementById('lb').classList.remove('show');
+    document.body.style.overflow = '';
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') lbClose(); });
+
+/* ══════════════════════════════════════
+   INTERACTIVE SIMULATOR
+══════════════════════════════════════ */
+let busy = false;
+let gasOn = false;
+let isDay = true;
+
+function simLog(msg, cls='muted'){
+    const log = document.getElementById('sim-log');
+    const ts = new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    const div = document.createElement('div');
+    div.className = 'log-line '+cls;
+    div.textContent = `[${ts}] ${msg}`;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+}
+
+function setInd(id, state){
+    const el = document.getElementById(id);
+    el.classList.remove('active','warn');
+    if(state) el.classList.add(state);
+}
+
+function setBarrier(open){
+    const arm = document.getElementById('barrier-arm');
+    const val = document.getElementById('val-pluma');
+    if(open){
+        arm.classList.add('open');
+        val.textContent = 'ABIERTA';
+        val.style.color = 'var(--g)';
+        setInd('ind-pluma','active');
+    } else {
+        arm.classList.remove('open');
+        val.textContent = 'CERRADA';
+        val.style.color = 'var(--muted)';
+        setInd('ind-pluma','');
+    }
+}
+
+function setSensorEye(id, on){
+    document.getElementById(id).classList.toggle('lit', on);
+}
+
+function wait(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+async function simVehiculo(){
+    if(busy) return;
+    busy = true;
+    document.getElementById('btn-car').disabled = true;
+
+    // Step 1: Entry sensor
+    setSensorEye('eye-a', true);
+    setInd('ind-entrada','active');
+    document.getElementById('val-entrada').textContent = 'ON';
+    simLog('> Sensor entrada activado — vehículo detectado', 'ok');
+
+    await wait(900);
+
+    // Step 2: Open barrier
+    setBarrier(true);
+    simLog('> Pluma abierta — ¡Córrele que se cierra!', 'ok');
+
+    await wait(2600);
+
+    // Step 3: Entry sensor off, exit sensor on
+    setSensorEye('eye-a', false);
+    setInd('ind-entrada','');
+    document.getElementById('val-entrada').textContent = 'OFF';
+
+    setSensorEye('eye-b', true);
+    setInd('ind-salida','active');
+    document.getElementById('val-salida').textContent = 'ON';
+    simLog('> Sensor salida activado — vehículo cruzó la pluma', 'ok');
+
+    await wait(900);
+
+    // Step 4: Close barrier
+    setBarrier(false);
+    simLog('> Pluma cerrada — sistema en espera', 'muted');
+
+    await wait(700);
+
+    setSensorEye('eye-b', false);
+    setInd('ind-salida','');
+    document.getElementById('val-salida').textContent = 'OFF';
+    simLog('> Ciclo completado correctamente', 'ok');
+
+    busy = false;
+    document.getElementById('btn-car').disabled = false;
+}
+
+function simGas(){
+    gasOn = !gasOn;
+    if(gasOn){
+        setInd('ind-gas','warn');
+        document.getElementById('val-gas').textContent = 'ALERTA';
+        document.getElementById('val-gas').style.color = 'var(--amber)';
+        document.getElementById('gas-icon').textContent = '⚠️';
+        document.getElementById('gas-lbl').textContent = 'CUIDADO, HAY GAS';
+        document.getElementById('gas-lbl').style.color = 'var(--amber)';
+        simLog('> ALERTA: Gas elevado — ventilador activado', 'warn');
+    } else {
+        setInd('ind-gas','');
+        document.getElementById('val-gas').textContent = 'NORMAL';
+        document.getElementById('val-gas').style.color = 'var(--g)';
+        document.getElementById('gas-icon').textContent = '\u{1F33F}';
+        document.getElementById('gas-lbl').textContent = 'AIRE LIMPIO';
+        document.getElementById('gas-lbl').style.color = 'var(--g)';
+        simLog('> Gas en niveles normales — todo chill', 'ok');
+    }
+}
+
+function simLuz(){
+    isDay = !isDay;
+    const icon = document.getElementById('env-icon');
+    const lbl  = document.getElementById('env-label');
+    const val  = document.getElementById('val-luz');
+    const btn  = document.getElementById('btn-luz');
+    if(isDay){
+        icon.textContent = '☀️';
+        lbl.textContent  = 'ES DE DÍA';
+        lbl.style.color  = 'var(--amber)';
+        val.textContent  = 'DÍA';
+        btn.innerHTML    = '<i class="fas fa-moon"></i> <span>Alternar Luz</span>';
+        simLog('> Sensor luz: condición diurna detectada', 'muted');
+    } else {
+        icon.textContent = '🌙';
+        lbl.textContent  = 'ES DE NOCHE';
+        lbl.style.color  = 'var(--b)';
+        val.textContent  = 'NOCHE';
+        btn.innerHTML    = '<i class="fas fa-sun"></i> <span>Alternar Luz</span>';
+        simLog('> Sensor luz: noche detectada — luces activadas', 'ok');
+    }
+}
+
+function simReset(){
+    busy = false;
+    gasOn = false;
+    isDay = true;
+    document.getElementById('btn-car').disabled = false;
+
+    setSensorEye('eye-a', false);
+    setSensorEye('eye-b', false);
+    setBarrier(false);
+    setInd('ind-entrada','');
+    setInd('ind-salida','');
+    setInd('ind-gas','');
+    setInd('ind-luz','');
+
+    document.getElementById('val-entrada').textContent = 'OFF';
+    document.getElementById('val-salida').textContent  = 'OFF';
+    document.getElementById('val-gas').textContent     = 'NORMAL';
+    document.getElementById('val-gas').style.color     = 'var(--g)';
+    document.getElementById('val-luz').textContent     = 'DÍA';
+
+    document.getElementById('gas-icon').textContent = '\u{1F33F}';
+    document.getElementById('gas-lbl').textContent  = 'AIRE LIMPIO';
+    document.getElementById('gas-lbl').style.color  = 'var(--g)';
+
+    document.getElementById('env-icon').textContent = '☀️';
+    document.getElementById('env-label').textContent = 'ES DE DÍA';
+    document.getElementById('env-label').style.color = 'var(--amber)';
+    document.getElementById('btn-luz').innerHTML = '<i class="fas fa-moon"></i> <span>Alternar Luz</span>';
+
+    document.getElementById('sim-log').innerHTML =
+        '<div class="log-line muted">&gt; Sistema reiniciado. Esperando vehículo...</div>';
+}
+</script>
+
+</body>
+</html>
